@@ -39,7 +39,7 @@ def upload_file():
         # Wykonywanie OCR za pomocą ocrmypdf
         processed_filepath = os.path.join(app.config['PROCESSED_FOLDER'], filename)
         try:
-            subprocess.run(['ocrmypdf', '--skip-text', filepath, processed_filepath], check=True)
+            subprocess.run(['ocrmypdf', filepath, processed_filepath], check=True)
             return redirect(url_for('download_file', filename=filename))
         except subprocess.CalledProcessError:
             try:
