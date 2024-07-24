@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Upload PDF for OCR</title>
+    <title>Prześlij PDF do OCR</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   </head>
   <body>
     <div class="container mt-5">
-      <h1 class="text-center">Upload PDF for OCR Processing</h1>
+      <h1 class="text-center">Przekaż plik PDF do procesowania OCR</h1>
       {% with messages = get_flashed_messages() %}
         {% if messages %}
           <div class="alert alert-danger">
@@ -23,10 +23,10 @@
       {% endwith %}
       <form action="/upload" method="post" enctype="multipart/form-data" class="mt-4">
         <div class="form-group">
-          <label for="file">Choose PDF file</label>
+          <label for="file">Wybierz plik PDF</label>
           <input type="file" class="form-control-file" id="file" name="file">
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Upload</button>
+        <button type="submit" class="btn btn-primary btn-block">Prześlij</button>
       </form>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
