@@ -1,11 +1,12 @@
 from flask import Flask, request, redirect, url_for, send_from_directory, render_template, flash
 import os
 import subprocess
+import img2pdf
 from werkzeug.utils import secure_filename
 
 UPLOAD_FOLDER = 'uploads'
 PROCESSED_FOLDER = 'processed'
-ALLOWED_EXTENSIONS = {'pdf'}
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # wymagane dla flash messages
@@ -16,6 +17,13 @@ app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Konwertuje obraz na PDF
+def convert_image_to_pdf(image_path, output_path):
+    with open(image_path, 'rb') as f:
+        image_data = f.read()
+    with open(output_path, 'wb') as f:
+        f.write(img2pdf.convert(image_data))
 
 # Strona główna z formularzem do przesyłania plików
 @app.route('/')
@@ -36,15 +44,23 @@ def upload_file():
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
+
+        # Sprawdza rozszerzenie pliku i konwertuje na PDF jeśli to obraz
+        if filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}:
+            pdf_filename = filename.rsplit('.', 1)[0] + '.pdf'
+            pdf_filepath = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
+            convert_image_to_pdf(filepath, pdf_filepath)
+            filepath = pdf_filepath
+
         # Wykonywanie OCR za pomocą ocrmypdf
-        processed_filepath = os.path.join(app.config['PROCESSED_FOLDER'], filename)
+        processed_filepath = os.path.join(app.config['PROCESSED_FOLDER'], os.path.basename(filepath))
         try:
-            subprocess.run(['ocrmypdf', filepath, processed_filepath], check=True)
-            return redirect(url_for('download_file', filename=filename))
+            subprocess.run(['ocrmypdf', '--skip-text', filepath, processed_filepath], check=True)
+            return redirect(url_for('download_file', filename=os.path.basename(filepath)))
         except subprocess.CalledProcessError:
             try:
                 subprocess.run(['ocrmypdf', '--force-ocr', filepath, processed_filepath], check=True)
-                return redirect(url_for('download_file', filename=filename))
+                return redirect(url_for('download_file', filename=os.path.basename(filepath)))
             except subprocess.CalledProcessError:
                 flash('Error processing file with OCR')
                 return redirect(request.url)
