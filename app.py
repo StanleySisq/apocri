@@ -67,12 +67,14 @@ def upload_file():
         processed_filepath = os.path.join(app.config['PROCESSED_FOLDER'], os.path.basename(filepath))
         try:
             subprocess.run(['ocrmypdf', '--skip-text', filepath, processed_filepath], check=True)
-            threading.Thread(target=delete_file, args=(processed_filepath,)).start()
+            threading.Thread(target=delete_file, args=(filepath,)).start()  # Usuń plik z uploads
+            threading.Thread(target=delete_file, args=(processed_filepath,)).start()  # Usuń plik z processed
             return redirect(url_for('download_file', filename=os.path.basename(filepath)))
         except subprocess.CalledProcessError:
             try:
                 subprocess.run(['ocrmypdf', '--force-ocr', filepath, processed_filepath], check=True)
-                threading.Thread(target=delete_file, args=(processed_filepath,)).start()
+                threading.Thread(target=delete_file, args=(filepath,)).start()  # Usuń plik z uploads
+                threading.Thread(target=delete_file, args=(processed_filepath,)).start()  # Usuń plik z processed
                 return redirect(url_for('download_file', filename=os.path.basename(filepath)))
             except subprocess.CalledProcessError:
                 flash('Błąd przetwarzania pliku za pomocą OCR')
@@ -84,8 +86,6 @@ def upload_file():
 # Pobieranie przetworzonego pliku
 @app.route('/processed/<filename>')
 def download_file(filename):
-    processed_filepath = os.path.join(app.config['PROCESSED_FOLDER'], filename)
-    threading.Thread(target=delete_file, args=(processed_filepath,)).start()
     return send_from_directory(app.config['PROCESSED_FOLDER'], filename)
 
 if __name__ == '__main__':
