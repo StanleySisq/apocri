@@ -2,6 +2,8 @@ from flask import Flask, request, redirect, url_for, send_from_directory, render
 import os
 import subprocess
 import img2pdf
+import threading
+import time
 from werkzeug.utils import secure_filename
 
 UPLOAD_FOLDER = 'uploads'
@@ -25,6 +27,15 @@ def convert_image_to_pdf(image_path, output_path):
     with open(output_path, 'wb') as f:
         f.write(img2pdf.convert(image_data))
 
+# Usuwa plik po 30 sekundach
+def delete_file(filepath):
+    time.sleep(30)
+    try:
+        os.remove(filepath)
+        print(f"Deleted {filepath}")
+    except Exception as e:
+        print(f"Error deleting file {filepath}: {e}")
+
 # Strona główna z formularzem do przesyłania plików
 @app.route('/')
 def upload_form():
@@ -34,11 +45,11 @@ def upload_form():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        flash('No file part')
+        flash('Brak części pliku')
         return redirect(request.url)
     file = request.files['file']
     if file.filename == '':
-        flash('No selected file')
+        flash('Nie wybrano pliku')
         return redirect(request.url)
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
@@ -56,21 +67,25 @@ def upload_file():
         processed_filepath = os.path.join(app.config['PROCESSED_FOLDER'], os.path.basename(filepath))
         try:
             subprocess.run(['ocrmypdf', '--skip-text', filepath, processed_filepath], check=True)
+            threading.Thread(target=delete_file, args=(processed_filepath,)).start()
             return redirect(url_for('download_file', filename=os.path.basename(filepath)))
         except subprocess.CalledProcessError:
             try:
                 subprocess.run(['ocrmypdf', '--force-ocr', filepath, processed_filepath], check=True)
+                threading.Thread(target=delete_file, args=(processed_filepath,)).start()
                 return redirect(url_for('download_file', filename=os.path.basename(filepath)))
             except subprocess.CalledProcessError:
-                flash('Error processing file with OCR')
+                flash('Błąd przetwarzania pliku za pomocą OCR')
                 return redirect(request.url)
     else:
-        flash('File not allowed')
+        flash('Plik niedozwolony')
         return redirect(request.url)
 
 # Pobieranie przetworzonego pliku
 @app.route('/processed/<filename>')
 def download_file(filename):
+    processed_filepath = os.path.join(app.config['PROCESSED_FOLDER'], filename)
+    threading.Thread(target=delete_file, args=(processed_filepath,)).start()
     return send_from_directory(app.config['PROCESSED_FOLDER'], filename)
 
 if __name__ == '__main__':
