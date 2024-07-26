@@ -130,7 +130,7 @@ def api_upload_file():
                 return jsonify({'error': 'Błąd przetwarzania pliku za pomocą OCR'}), 500
         
         # Wykonywanie przetworzenia pliku za pomocą zewnętrznego API
-        headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjc2NTA1OGItYTlkMi00MTQyLTljNmQtZTYwODA1NGJiY2M2IiwidHlwZSI6ImFwaV90b2tlbiJ9.pA9vNXL3xsSgDfUaz7JaLqIqPHfgUKxQS6a-W372SGU"}
+        headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjc2NTA1OGItYTlkMi00MTQyLTljNmQtZTYwODA1NGJiY2M2IiwidHlwZSI6ImFwaV90b2tlbiJ9.pA9vNXL3xsSgDfUaz7JaLqIqPHfgUKxQS6a-"}
         url = "https://api.edenai.run/v2/ocr/financial_parser"
         data = {
             "providers": "microsoft",
