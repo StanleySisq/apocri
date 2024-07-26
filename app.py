@@ -1,6 +1,7 @@
 import os
 from flask import Flask, request, redirect, url_for, render_template, jsonify
 from werkzeug.utils import secure_filename
+from PIL import Image
 import ocrmypdf
 import threading
 import time
@@ -16,7 +17,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 app.config['SECRET_KEY'] = 'supersecretkey'
 
-headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjc2NTA1OGItYTlkMi00MTQyLTljNmQtZTYwODA1NGJiY2M2IiwidHlwZSI6ImFwaV90b2tlbiJ9.pA9vNXL3xsSgDfUaz7JaLqIqPHfgUKxQS6a"}
+headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjc2NTA1OGItYTlkMi00MTQyLTljNmQtZTYwODA1NGJiY2M2IiwidHlwZSI6ImFwaV90b2tlbiJ9.pA9vNXL3xsSgDfUaz7JaLqIqPHfgUKxQS6a-W"}
 edenai_url = "https://api.edenai.run/v2/ocr/financial_parser"
 edenai_data = {
     "providers": "microsoft",
@@ -135,7 +136,4 @@ def filter_empty_fields(data):
         return data
 
 if __name__ == '__main__':
-
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    os.makedirs(PROCESSED_FOLDER, exist_ok=True)
-    app.run(host='172.17.17.34', port=5000, debug=True)
+    app.run(host='172.17.17.34', port=5000)
