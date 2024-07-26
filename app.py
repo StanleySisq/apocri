@@ -16,7 +16,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 app.config['SECRET_KEY'] = 'supersecretkey'
 
-headers = {"Authorization": "Bearer YOUR_EDENAI_API_KEY"}
+headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjc2NTA1OGItYTlkMi00MTQyLTljNmQtZTYwODA1NGJiY2M2IiwidHlwZSI6ImFwaV90b2tlbiJ9.pA9vNXL3xsSgDfUaz7JaLqIqPHfgUKxQS6a"}
 edenai_url = "https://api.edenai.run/v2/ocr/financial_parser"
 edenai_data = {
     "providers": "microsoft",
