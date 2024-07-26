@@ -135,4 +135,7 @@ def filter_empty_fields(data):
         return data
 
 if __name__ == '__main__':
-    app.run(host='172.17.17.34', port=5000)
+
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(PROCESSED_FOLDER, exist_ok=True)
+    app.run(host='172.17.17.34', port=5000, debug=True)
