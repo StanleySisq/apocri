@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, redirect, url_for, render_template, jsonify, send_file
+from flask import Flask, request, redirect, url_for, render_template, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from PIL import Image
 import ocrmypdf
@@ -74,13 +74,15 @@ def upload_file():
         except ocrmypdf.exceptions.MissingDependencyError:
             ocrmypdf.ocr(file_path, processed_path, force_ocr=True)
 
-        files_to_delete = [file_path, processed_path]
+        delete_file_later([file_path, processed_path])
 
-        delete_file_later(files_to_delete)
-
-        return send_file(processed_path, as_attachment=True)
+        return redirect(url_for('download_file', filename=processed_filename))
 
     return redirect(url_for('index'))
+
+@app.route('/processed/<filename>')
+def download_file(filename):
+    return send_from_directory(app.config['PROCESSED_FOLDER'], filename)
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -114,8 +116,7 @@ def api_upload():
         except ocrmypdf.exceptions.MissingDependencyError:
             ocrmypdf.ocr(file_path, processed_path, force_ocr=True)
 
-        files_to_delete = [file_path, processed_path]
-        delete_file_later(files_to_delete)
+        delete_file_later([file_path, processed_path])
 
         with open(processed_path, 'rb') as f:
             response = requests.post(edenai_url, data=edenai_data, files={'file': f}, headers=headers)
