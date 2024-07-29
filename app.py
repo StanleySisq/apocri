@@ -34,12 +34,12 @@ if not os.path.exists(PROCESSED_FOLDER):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def delete_file_later(files, delay=30):
+def delete_file_later(*file_paths, delay=30):
     def delete_files():
         time.sleep(delay)
-        for file in files:
-            if os.path.exists(file):
-                os.remove(file)
+        for file_path in file_paths:
+            if os.path.exists(file_path):
+                os.remove(file_path)
     threading.Thread(target=delete_files).start()
 
 @app.route('/')
@@ -74,7 +74,7 @@ def upload_file():
         except ocrmypdf.exceptions.MissingDependencyError:
             ocrmypdf.ocr(file_path, processed_path, force_ocr=True)
 
-        delete_file_later([file_path, processed_path])
+        delete_file_later(file_path, processed_path)
 
         return redirect(url_for('download_file', filename=processed_filename))
 
@@ -120,7 +120,7 @@ def api_upload():
             response = requests.post(edenai_url, data=edenai_data, files={'file': f}, headers=headers)
             result = response.json()
 
-        delete_file_later([file_path, processed_path])
+        delete_file_later(file_path, processed_path)
 
         return jsonify(result)
 
