@@ -17,11 +17,11 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 app.config['SECRET_KEY'] = 'supersecretkey'
 
-headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjc2NTA1OGItYTlkMi00MTQyLTljNmQtZTYwODA1NGJiY2M2IiwidHlwZSI6ImFwaV90b2tlbiJ9.pA9vNXL3xsSgDfUaz7JaLqIqPHfgUKxQS6a"}
+headers = {"Authorization": "Bearer YOUR_EDENAI_API_KEY"}
 edenai_url = "https://api.edenai.run/v2/ocr/financial_parser"
 edenai_data = {
     "providers": "microsoft",
-    "document_type" : "invoice",
+    "document_type": "invoice",
     "language": "pl",
 }
 
@@ -116,11 +116,11 @@ def api_upload():
         except ocrmypdf.exceptions.MissingDependencyError:
             ocrmypdf.ocr(file_path, processed_path, force_ocr=True)
 
-        delete_file_later([file_path, processed_path])
-
         with open(processed_path, 'rb') as f:
             response = requests.post(edenai_url, data=edenai_data, files={'file': f}, headers=headers)
             result = response.json()
+
+        delete_file_later([file_path, processed_path])
 
         return jsonify(result)
 
