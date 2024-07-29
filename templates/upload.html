@@ -16,10 +16,6 @@
         </div>
         <button type="submit" class="btn btn-primary">Prześlij</button>
       </form>
-      {% if result %}
-      <h2>Wynik OCR</h2>
-      <pre>{{ result | tojson(indent=2) }}</pre>
-      {% endif %}
     </div>
   </body>
 </html>
