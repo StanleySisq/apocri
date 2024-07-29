@@ -40,7 +40,7 @@ if not os.path.exists(JPK_FOLDER):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def delete_file_later(files, delay=30):
+def delete_file_later(*files, delay=30):
     def delete_files():
         time.sleep(delay)
         for file in files:
@@ -86,6 +86,8 @@ def upload_file():
 
         if filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}:
             image = Image.open(file_path)
+            if image.mode in ("RGBA", "P"):  # Convert to RGB if necessary
+                image = image.convert("RGB")
             pdf_path = file_path.rsplit('.', 1)[0] + '.pdf'
             image.save(pdf_path, 'PDF')
             file_path = pdf_path
@@ -97,7 +99,7 @@ def upload_file():
 
         files_to_delete = [file_path, processed_path]
 
-        delete_file_later(files_to_delete)
+        delete_file_later(*files_to_delete)
 
         with open(processed_path, 'rb') as f:
             response = requests.post(edenai_url, data=edenai_data, files={'file': f}, headers=headers)
@@ -130,6 +132,8 @@ def api_upload():
 
         if filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}:
             image = Image.open(file_path)
+            if image.mode in ("RGBA", "P"):  # Convert to RGB if necessary
+                image = image.convert("RGB")
             pdf_path = file_path.rsplit('.', 1)[0] + '.pdf'
             image.save(pdf_path, 'PDF')
             file_path = pdf_path
@@ -140,7 +144,7 @@ def api_upload():
             ocrmypdf.ocr(file_path, processed_path, force_ocr=True)
 
         files_to_delete = [file_path, processed_path, jpk_path]
-        delete_file_later(files_to_delete)
+        delete_file_later(*files_to_delete)
 
         with open(processed_path, 'rb') as f:
             response = requests.post(edenai_url, data=edenai_data, files={'file': f}, headers=headers)
