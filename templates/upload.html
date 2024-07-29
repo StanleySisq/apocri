@@ -3,34 +3,23 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Prześlij PDF lub obraz do OCR</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>OCR PDF</title>
   </head>
   <body>
-    <div class="container mt-5">
-      <h1 class="text-center">Prześlij PDF lub obraz do przetwarzania OCR</h1>
-      {% with messages = get_flashed_messages() %}
-        {% if messages %}
-          <div class="alert alert-danger">
-            <ul>
-              {% for message in messages %}
-                <li>{{ message }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-        {% endif %}
-      {% endwith %}
-      <form action="/upload" method="post" enctype="multipart/form-data" class="mt-4">
+    <div class="container">
+      <h1>Prześlij plik do OCR</h1>
+      <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
         <div class="form-group">
-          <label for="file">Wybierz plik PDF lub obraz</label>
+          <label for="file">Wybierz plik</label>
           <input type="file" class="form-control-file" id="file" name="file">
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Prześlij</button>
+        <button type="submit" class="btn btn-primary">Prześlij</button>
       </form>
+      {% if result %}
+      <h2>Wynik OCR</h2>
+      <pre>{{ result | tojson(indent=2) }}</pre>
+      {% endif %}
     </div>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   </body>
 </html>
