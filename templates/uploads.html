@@ -12,9 +12,11 @@
       <h1>Prześlij pliki do OCR</h1>
       <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
         <div class="form-group">
-          <label for="file">Wybierz pliki (maks. 3)</label>
+          <label for="file">Wybierz pliki (maks. 3) (Pliki zostaną połączone)</label>
+          </br>
           <input type="file" class="form-control-file" id="file" name="files" multiple>
         </div>
+        </br>
         <button type="submit" class="btn btn-primary">Prześlij</button>
       </form>
     </div>
