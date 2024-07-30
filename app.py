@@ -5,8 +5,8 @@ from PIL import Image
 import ocrmypdf
 import threading
 import time
-import json
 import requests
+from PyPDF2 import PdfMerger
 
 UPLOAD_FOLDER = 'uploads'
 PROCESSED_FOLDER = 'processed'
@@ -17,7 +17,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 app.config['SECRET_KEY'] = 'supersecretkey'
 
-headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjc2NTA1OGItYTlkMi00MTQyLTljNmQtZTYwODA1NGJiY2M2IiwidHlwZSI6ImFwaV90b2tlbiJ9.pA9vNXL3xsSgDfUaz7JaLqIqPHfgUKxQS6a"}
+headers = {
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjc2NTA1OGItYTlkMi00MTQyLTljNmQtZTYwODA1NGJiY2M2IiwidHlwZSI6ImFwaV90b2tlbiJ9.pA9vNXL3xsSgDfUaz7JaLqIqPHfgUKxQS6a"
+}
 edenai_url = "https://api.edenai.run/v2/ocr/financial_parser"
 edenai_data = {
     "providers": "microsoft",
@@ -42,43 +44,59 @@ def delete_file_later(*file_paths, delay=30):
                 os.remove(file_path)
     threading.Thread(target=delete_files).start()
 
+def merge_pdfs(paths, output):
+    merger = PdfMerger()
+    for pdf in paths:
+        merger.append(pdf)
+    merger.write(output)
+    merger.close()
+
 @app.route('/')
 def index():
-    return render_template('upload.html')
+    return render_template('uploads.html')
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    if 'file' not in request.files:
+    if 'files' not in request.files:
         return redirect(request.url)
-    file = request.files['file']
-    if file.filename == '':
+    files = request.files.getlist('files')
+    if len(files) == 0 or len(files) > 3:
         return redirect(request.url)
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
+    
+    file_paths = []
+    for file in files:
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            file_paths.append(file_path)
 
-        processed_filename = 'processed_' + filename.rsplit('.', 1)[0] + '.pdf'
-        processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
+    if len(file_paths) > 1:
+        merged_pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], 'merged.pdf')
+        merge_pdfs(file_paths, merged_pdf_path)
+        file_path = merged_pdf_path
+    else:
+        file_path = file_paths[0]
 
-        if filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}:
-            image = Image.open(file_path)
-            if image.mode in ("RGBA", "P"):  # Convert to RGB if necessary
-                image = image.convert("RGB")
-            pdf_path = file_path.rsplit('.', 1)[0] + '.pdf'
-            image.save(pdf_path, 'PDF')
-            file_path = pdf_path
+    processed_filename = 'processed_' + secure_filename(file_path).rsplit('.', 1)[0] + '.pdf'
+    processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
 
-        try:
-            ocrmypdf.ocr(file_path, processed_path, skip_text=True)
-        except ocrmypdf.exceptions.MissingDependencyError:
-            ocrmypdf.ocr(file_path, processed_path, force_ocr=True)
+    if file_path.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}:
+        image = Image.open(file_path)
+        if image.mode in ("RGBA", "P"):
+            image = image.convert("RGB")
+        pdf_path = file_path.rsplit('.', 1)[0] + '.pdf'
+        image.save(pdf_path, 'PDF')
+        file_path = pdf_path
 
-        delete_file_later(file_path, processed_path)
+    try:
+        ocrmypdf.ocr(file_path, processed_path, skip_text=True)
+    except ocrmypdf.exceptions.MissingDependencyError:
+        ocrmypdf.ocr(file_path, processed_path, force_ocr=True)
 
-        return redirect(url_for('download_file', filename=processed_filename))
-
-    return redirect(url_for('index'))
+    delete_file_later(*file_paths, file_path, processed_path)
+    
+    return redirect(url_for('download_file', filename=processed_filename))
 
 @app.route('/processed/<filename>')
 def download_file(filename):
@@ -105,7 +123,7 @@ def api_upload():
 
         if filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}:
             image = Image.open(file_path)
-            if image.mode in ("RGBA", "P"):  # Convert to RGB if necessary
+            if image.mode in ("RGBA", "P"):
                 image = image.convert("RGB")
             pdf_path = file_path.rsplit('.', 1)[0] + '.pdf'
             image.save(pdf_path, 'PDF')
