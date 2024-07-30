@@ -59,44 +59,52 @@ def index():
 def upload_file():
     if 'files' not in request.files:
         return redirect(request.url)
+
     files = request.files.getlist('files')
-    if len(files) == 0 or len(files) > 3:
+
+    # Check if files were uploaded
+    if not files or len(files) == 0:
         return redirect(request.url)
-    
-    file_paths = []
+
+    pdf_files = []
     for file in files:
+        if file.filename == '':
+            continue
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
-            file_paths.append(file_path)
 
-    if len(file_paths) > 1:
-        merged_pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], 'merged.pdf')
-        merge_pdfs(file_paths, merged_pdf_path)
-        file_path = merged_pdf_path
-    else:
-        file_path = file_paths[0]
+            # Convert images to PDF
+            if filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}:
+                image = Image.open(file_path)
+                if image.mode in ("RGBA", "P"):  # Convert to RGB if necessary
+                    image = image.convert("RGB")
+                pdf_path = file_path.rsplit('.', 1)[0] + '.pdf'
+                image.save(pdf_path, 'PDF')
+                file_path = pdf_path
 
-    processed_filename = 'processed_' + secure_filename(file_path).rsplit('.', 1)[0] + '.pdf'
-    processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
+            pdf_files.append(file_path)
 
-    if file_path.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}:
-        image = Image.open(file_path)
-        if image.mode in ("RGBA", "P"):
-            image = image.convert("RGB")
-        pdf_path = file_path.rsplit('.', 1)[0] + '.pdf'
-        image.save(pdf_path, 'PDF')
-        file_path = pdf_path
+    # Merge PDFs
+    if pdf_files:
+        merged_pdf_path = os.path.join(app.config['PROCESSED_FOLDER'], 'merged.pdf')
+        merge_pdfs(pdf_files, merged_pdf_path)
 
-    try:
-        ocrmypdf.ocr(file_path, processed_path, skip_text=True)
-    except ocrmypdf.exceptions.MissingDependencyError:
-        ocrmypdf.ocr(file_path, processed_path, force_ocr=True)
+        processed_filename = 'processed_merged.pdf'
+        processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
 
-    delete_file_later(*file_paths, file_path, processed_path)
-    
-    return redirect(url_for('download_file', filename=processed_filename))
+        # Perform OCR
+        try:
+            ocrmypdf.ocr(merged_pdf_path, processed_path, skip_text=True)
+        except ocrmypdf.exceptions.MissingDependencyError:
+            ocrmypdf.ocr(merged_pdf_path, processed_path, force_ocr=True)
+
+        delete_file_later(*pdf_files, merged_pdf_path, processed_path)
+        
+        return redirect(url_for('download_file', filename=processed_filename))
+
+    return redirect(url_for('index'))
 
 @app.route('/processed/<filename>')
 def download_file(filename):
