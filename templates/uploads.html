@@ -1,24 +1,26 @@
 <!doctype html>
 <html lang="pl">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <title>SISQ OCR PDF</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon.png') }}">
-  </head>
-  <body>
-    <div class="container">
-      <h1>Prześlij pliki do OCR</h1>
-      <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
-        <div class="form-group">
-          <label for="file">Wybierz pliki (maks. 3) (Pliki zostaną połączone)</label>
-          </br></br>
-          <input type="file" class="form-control-file" id="file" name="files" multiple>
-        </div>
-        </br>
-        <button type="submit" class="btn btn-primary">Prześlij</button>
-      </form>
-    </div>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>SISQ OCR PDF</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon.png') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Prześlij pliki do OCR</h1>
+    <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="file">Wybierz pliki (pliki zostaną połączone)</label>
+        <input type="file" class="form-control-file" id="files" name="files" multiple>
+      </div>
+      <div class="form-group">
+        <input type="checkbox" id="skip_ocr" name="skip_ocr">
+        <label for="skip_ocr">Połącz pliki bez OCR</label>
+      </div>
+      <button type="submit" class="btn btn-primary">Prześlij</button>
+    </form>
+  </div>
+</body>
 </html>

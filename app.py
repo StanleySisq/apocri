@@ -95,11 +95,16 @@ def upload_file():
         processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
 
         # Perform OCR
-        try:
-            ocrmypdf.ocr(merged_pdf_path, processed_path, skip_text=True)
-        except ocrmypdf.exceptions.MissingDependencyError:
-            ocrmypdf.ocr(merged_pdf_path, processed_path, force_ocr=True)
+        skip_ocr = 'skip_ocr' in request.form
 
+        if not skip_ocr:
+            try:
+                ocrmypdf.ocr(merged_pdf_path, processed_path, skip_text=True)
+            except ocrmypdf.exceptions.MissingDependencyError:
+                ocrmypdf.ocr(merged_pdf_path, processed_path, force_ocr=True)
+        else:
+            os.rename(merged_pdf_path, processed_path)
+       
         delete_file_later(*pdf_files, merged_pdf_path, processed_path)
         
         return redirect(url_for('download_file', filename=processed_filename))
@@ -118,9 +123,11 @@ def page_not_found(e):
 def api_upload():
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
+    
     file = request.files['file']
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
+    
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -141,10 +148,18 @@ def api_upload():
             ocrmypdf.ocr(file_path, processed_path, skip_text=True)
         except ocrmypdf.exceptions.MissingDependencyError:
             ocrmypdf.ocr(file_path, processed_path, force_ocr=True)
+        except Exception as e:
+            return jsonify({"error": f"OCR failed: {str(e)}"}), 500
 
-        with open(processed_path, 'rb') as f:
-            response = requests.post(edenai_url, data=edenai_data, files={'file': f}, headers=headers)
-            result = response.json()
+        try:
+            with open(processed_path, 'rb') as f:
+                response = requests.post(edenai_url, data=edenai_data, files={'file': f}, headers=headers)
+                response.raise_for_status()  # Check for HTTP errors
+                result = response.json()
+        except requests.exceptions.RequestException as e:
+            return jsonify({"error": f"Request failed: {str(e)}"}), 500
+        except ValueError:
+            return jsonify({"error": "Invalid JSON response from API"}), 500
 
         delete_file_later(file_path, processed_path)
 
